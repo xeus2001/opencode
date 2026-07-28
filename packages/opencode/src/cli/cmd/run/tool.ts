@@ -356,7 +356,7 @@ function runEdit(p: ToolProps<typeof EditTool>): ToolInline {
 }
 
 function runWebSearch(p: ToolProps<typeof WebSearchTool>): ToolInline {
-  const title = webSearchProviderLabel(p.metadata.provider)
+  const title = webSearchProviderLabel()
   return {
     icon: "◈",
     title: p.input.query ? `${title} "${p.input.query}"` : title,
@@ -908,7 +908,7 @@ function scrollWebfetchStart(p: ToolProps<typeof WebFetchTool>): string {
 }
 
 function scrollWebSearchStart(p: ToolProps<typeof WebSearchTool>): string {
-  const title = webSearchProviderLabel(p.metadata.provider)
+  const title = webSearchProviderLabel()
   const query = p.input.query ?? ""
   if (!query) {
     return `◈ ${title}`
@@ -995,7 +995,7 @@ function permWebfetch(p: ToolPermissionProps<typeof WebFetchTool>): ToolPermissi
 
 function permWebSearch(p: ToolPermissionProps<typeof WebSearchTool>): ToolPermissionInfo {
   const query = p.input.query || ""
-  const title = webSearchProviderLabel(p.metadata.provider)
+  const title = webSearchProviderLabel()
   return {
     icon: "◈",
     title: query ? `${title} "${query}"` : title,

@@ -2,23 +2,10 @@ import { describe, expect, test } from "bun:test"
 import { toolDisplayMetadata, webSearchProviderLabel } from "../../src/util/tool-display"
 
 describe("webSearchProviderLabel", () => {
-  test("labels known providers", () => {
-    expect(webSearchProviderLabel("parallel")).toBe("Parallel Web Search")
-    expect(webSearchProviderLabel("exa")).toBe("Exa Web Search")
+  test("returns DuckDuckGo label", () => {
+    expect(webSearchProviderLabel()).toBe("DuckDuckGo Search")
+    expect(webSearchProviderLabel("duckduckgo")).toBe("DuckDuckGo Search")
   })
-
-  for (const [name, provider] of [
-    ["undefined", undefined],
-    ["null", null],
-    ["an object", {}],
-    ["an array", []],
-    ["a number", 1],
-    ["an unexpected string", "other"],
-  ] as const) {
-    test(`uses the generic label for ${name}`, () => {
-      expect(webSearchProviderLabel(provider)).toBe("Web Search")
-    })
-  }
 })
 
 describe("toolDisplayMetadata", () => {
