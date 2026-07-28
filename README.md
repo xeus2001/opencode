@@ -43,6 +43,44 @@
 
 ---
 
+### WebSearch branch
+This branch is modified to support local webseach by scraping duckduckgo.
+
+#### Check out
+```bash
+cd ~
+mkdir -p github.com
+mkdir -p github.com/xeus2001
+cd github.com/xeus2001
+git clone git@github.com:xeus2001/opencode.git
+cd opencode
+```
+
+#### Compile and install
+```bash
+# We need `nodejs`, `npm` and `bun` being installed
+# If typescript support is not yet installed globally (`tsc --version`), do it now:
+# sudo npm install -g typescript
+bun install
+
+# Ones the above has been done, we can recompile via:
+cd ~/github.com/xeus2001/opencode
+./packages/opencode/script/build.ts --single
+# test: packages/opencode/dist/opencode-linux-x64/bin/opencode
+mkdir -p ~/.local/bin
+cp packages/opencode/dist/opencode-linux-x64/bin/opencode ~/.local/bin/
+```
+Note: To uninstall the custom build, do `rm ~/.local/bin/opencode`
+
+#### Models
+```bash
+# To shows supported models:
+opencode models github-copilot
+
+# To update models list:
+opencode models github-copilot --refresh
+```
+
 ### Installation
 
 ```bash
