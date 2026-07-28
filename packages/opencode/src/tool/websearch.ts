@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect"
 import * as Tool from "./tool"
 import DESCRIPTION from "./websearch.txt"
-import * as DuckDuckScrape from "duck-duck-scrape"
+import { DDGSearch } from "@opencode-ai/core/tool/ddg-search"
 
 export function webSearchProviderLabel(_provider?: unknown) {
   return "DuckDuckGo Search"
@@ -12,14 +12,15 @@ export const Parameters = Schema.Struct({
   numResults: Schema.optional(Schema.Number.annotate({
     description: "Number of search results to return (default: 8)",
   })),
+  continueToken: Schema.optional(Schema.String).annotate({
+    description: "Continuation token from a previous search to load more results",
+  }),
 })
 
-const MAX_NUM_RESULTS = 20
-
-const formatResults = (results: DuckDuckScrape.SearchResult[]): string => {
+const formatResults = (results: DDGSearch.SearchResult[]): string => {
   if (results.length === 0) return "No search results found. Please try a different query."
   return results
-    .map((result, i) => `${i + 1}. ${result.title}\n   ${result.description}\n   ${result.url}`)
+    .map((result, i) => `${i + 1}. ${result.title}\n   ${result.snippet}\n   ${result.url}`)
     .join("\n\n")
 }
 
@@ -45,22 +46,14 @@ export const WebSearchTool = Tool.define(
         })
 
         const numResults = params.numResults ?? 8
-        const ddgResults = yield* Effect.promise(() =>
-          DuckDuckScrape.search(params.query, {
-            safeSearch: DuckDuckScrape.SafeSearchType.MODERATE,
-            locale: "en-us",
-            region: "wt-wt",
-            marketRegion: "US",
-          }),
-        ).pipe(
-          Effect.timeoutOrElse({
-            duration: 25_000,
-            orElse: () => Effect.fail(new Error("Web search request timed out")),
-          }),
-        )
+        const { results, continueToken } = yield* DDGSearch.search(params.query, numResults)
+        const text = formatResults(results)
+        const continuation = continueToken
+          ? `\n\n[CONTINUATION_TOKEN: ${continueToken}]\nUse websearch with continueToken to load more results.`
+          : ""
 
         return {
-          output: formatResults(ddgResults.results.slice(0, numResults)),
+          output: text + continuation,
           title: `DuckDuckGo Search: ${params.query}`,
           metadata: {},
         }

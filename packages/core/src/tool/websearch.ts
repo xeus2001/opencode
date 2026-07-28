@@ -1,13 +1,13 @@
 export * as WebSearchTool from "./websearch"
 
 import { ToolFailure } from "@opencode-ai/llm"
-import { Context, Duration, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema } from "effect"
 import { makeLocationNode } from "../effect/app-node"
 import { PermissionV2 } from "../permission"
 import { Tool } from "./tool"
 import { Tools } from "./tools"
 import { ToolRegistry } from "./registry"
-import * as DuckDuckScrape from "duck-duck-scrape"
+import { DDGSearch } from "./ddg-search"
 
 export const name = "websearch"
 export const NO_RESULTS = "No search results found. Please try a different query."
@@ -28,16 +28,19 @@ export const Input = Schema.Struct({
   )).annotate({
     description: `Number of search results to return (default: 8, maximum: ${MAX_NUM_RESULTS})`,
   }),
+  continueToken: Schema.optional(Schema.String).annotate({
+    description: "Continuation token from a previous search to load more results",
+  }),
 })
 
 const Output = Schema.Struct({
   text: Schema.String,
 })
 
-const formatResults = (results: DuckDuckScrape.SearchResult[]): string => {
+const formatResults = (results: DDGSearch.SearchResult[]): string => {
   if (results.length === 0) return NO_RESULTS
   return results
-    .map((result, i) => `${i + 1}. ${result.title}\n   ${result.description}\n   ${result.url}`)
+    .map((result, i) => `${i + 1}. ${result.title}\n   ${result.snippet}\n   ${result.url}`)
     .join("\n\n")
 }
 
@@ -66,22 +69,14 @@ const layer = Layer.effectDiscard(
               })
 
               const numResults = input.numResults ?? 8
-              const ddgResults = yield* Effect.promise(() =>
-                DuckDuckScrape.search(input.query, {
-                  safeSearch: DuckDuckScrape.SafeSearchType.MODERATE,
-                  locale: "en-us",
-                  region: "wt-wt",
-                  marketRegion: "US",
-                }),
-              ).pipe(
-                Effect.timeoutOrElse({
-                  duration: Duration.seconds(25),
-                  orElse: () => Effect.fail(new Error("Web search request timed out")),
-                }),
-              )
+              const { results, continueToken } = yield* DDGSearch.search(input.query, numResults)
+              const text = formatResults(results)
+              const continuation = continueToken
+                ? `\n\n[CONTINUATION_TOKEN: ${continueToken}]\nUse websearch with continueToken to load more results.`
+                : ""
 
               return {
-                text: formatResults(ddgResults.results.slice(0, numResults)),
+                text: text + continuation,
               }
             }).pipe(Effect.mapError(() => new ToolFailure({ message: `Unable to search the web for ${input.query}` }))),
         }),

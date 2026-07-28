@@ -13,6 +13,14 @@ describe("websearch parameters", () => {
     expect(decode({ query: "test", numResults: 5 })).toEqual({ query: "test", numResults: 5 })
   })
 
+  test("accepts query with continueToken", () => {
+    const decode = Schema.decodeUnknownSync(Parameters)
+    expect(decode({ query: "test", continueToken: "abc123" })).toEqual({
+      query: "test",
+      continueToken: "abc123",
+    })
+  })
+
   test("requires query field", () => {
     const decode = Schema.decodeUnknownSync(Parameters)
     expect(() => decode({})).toThrow()
